@@ -2,11 +2,10 @@ package main
 
 import (
 	"encoding/xml"
-	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 
+	"github.com/scanhamman/ema-changes/custom_logger"
 	"github.com/scanhamman/ema-changes/data"
 )
 
@@ -26,8 +25,15 @@ type MainData struct {
 	PublicTitle string   `xml:"public_title"`
 }
 
-func main() {
+var g *custom_logger.Logger
 
+func init() {
+	// Set up global logger, to write to a file
+
+	g = custom_logger.GetInstance(`C:\MDR_Logs\ema changes.txt`)
+}
+
+func main() {
 	fileName := os.Args[1]
 
 	// Check filename has the right pattern
@@ -39,20 +45,21 @@ func main() {
 	// get date embedded in filename in ISO format.
 	// It can then be used in database statements.
 	date_string := fileName[4:8] + "-" + fileName[8:10] + "-" + fileName[10:12]
-	fmt.Printf("date string is : %s\n", date_string)
+	g.InfoLogger.Printf("date string is : %s\n", date_string)
 
 	// Build the location of the ema file.
 	// filepath.Abs appends the file name to the default working directory.
-	trialsFilePath, err := filepath.Abs(fileName)
+	basePath := `C:\MDR_Sources\EUCTR\`
+	trialsFilePath := basePath + fileName
 	if err != nil {
-		fmt.Println(err)
+		g.ErrorLogger.Println(err)
 		os.Exit(1)
 	}
 
 	// Open the ema file, with deferred closure.
 	file, err := os.Open(trialsFilePath)
 	if err != nil {
-		fmt.Println(err)
+		g.ErrorLogger.Println(err)
 		os.Exit(1)
 	}
 	defer file.Close()
@@ -60,7 +67,7 @@ func main() {
 	// Read in XML file and decodes to defined structures.
 	var foundTrials trials
 	if err := xml.NewDecoder(file).Decode(&foundTrials); err != nil {
-		fmt.Println(err)
+		g.ErrorLogger.Println(err)
 		os.Exit(1)
 	}
 
@@ -79,15 +86,14 @@ func main() {
 
 	// List the trials for checking purposes
 	for _, id := range ids {
-		fmt.Printf("id: %s\n", id)
+		g.InfoLogger.Printf("id: %s\n", id)
 	}
 
 	// Update source studies table in database.
 	num_updated, num_added := data.ProcessFileIDData(ids, date_string)
 
 	max_id := data.GetMaxId("mon", "sf", "saf_events")
-	fmt.Printf("Max Id in saf evets table: %d\n", max_id)
-
-	fmt.Printf("\nnumber of records updated: %d\n", num_updated)
-	fmt.Printf("num of records added: %d\n", num_added)
+	g.InfoLogger.Printf("Max Id in saf evets table: %d", max_id)
+	g.InfoLogger.Printf("Number of records updated: %d", num_updated)
+	g.InfoLogger.Printf("Num of records added: %d", num_added)
 }
