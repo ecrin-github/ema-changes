@@ -8,11 +8,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func GetMaxId(db_name, schema_name, table_name string) (max_num int) {
+func GetMaxId(dbname, schema_name, table_name string) (max_num int) {
+
+	creds := GetCredentials("./data/db_settings.json")
 
 	// connection string
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, db_name)
+		creds.Host, creds.Port, creds.User, creds.Password, dbname)
 
 	// open database
 	db, err := sql.Open("postgres", psqlconn)

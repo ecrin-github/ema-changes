@@ -2,25 +2,21 @@ package data
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "WinterIsComing!"
-	dbname   = "mon"
-)
-
 func ProcessFileIDData(ids []string, date_string string) (num_updated, num_added int) {
 
+	creds := GetCredentials("./data/db_settings.json")
+	dbname := "mon"
 	// connection string
 	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		creds.Host, creds.Port, creds.User, creds.Password, dbname)
 
 	// open database
 	db, err := sql.Open("postgres", psqlconn)
@@ -77,4 +73,26 @@ func ProcessFileIDData(ids []string, date_string string) (num_updated, num_added
 		}
 	}
 	return
+}
+
+type Credentials struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+}
+
+func GetCredentials(json_file string) (c Credentials) {
+
+	content, err := ioutil.ReadFile(json_file)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	err = json.Unmarshal(content, &c)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return c
 }
