@@ -8,14 +8,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "WinterIsComing!"
-	dbname   = "mon"
-)
-
 func ProcessFileIDData(ids []string, date_string string) (num_updated, num_added int) {
 
 	// connection string
