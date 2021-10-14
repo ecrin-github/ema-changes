@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/scanhamman/ema-changes/custom_logger"
 	"github.com/scanhamman/ema-changes/data"
@@ -42,6 +43,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	start_time := time.Now()
+
 	// get date embedded in filename in ISO format.
 	// It can then be used in database statements.
 	date_string := fileName[4:8] + "-" + fileName[8:10] + "-" + fileName[10:12]
@@ -79,21 +82,15 @@ func main() {
 		ids = append(ids, m.TrialId)
 	}
 
-	// add these trial ids for testing purposes
-	ids = append(ids, "2004-000007-18-SE")
-	ids = append(ids, "2004-000012-13-CZ")
-	ids = append(ids, "2004-000015-25-SK")
-
-	// List the trials for checking purposes
-	for _, id := range ids {
-		g.InfoLogger.Printf("id: %s\n", id)
-	}
+	// for testing additon of new records
+	//ids = append(ids, "2100-123456-44-XL")
+	//ids = append(ids, "2100-987654-66-SE")
 
 	// Update source studies table in database.
 	num_updated, num_added := data.ProcessFileIDData(ids, date_string)
 
-	max_id := data.GetMaxId("mon", "sf", "saf_events")
-	g.InfoLogger.Printf("Max Id in saf evets table: %d", max_id)
 	g.InfoLogger.Printf("Number of records updated: %d", num_updated)
 	g.InfoLogger.Printf("Num of records added: %d", num_added)
+
+	data.StoreSAFRecord(trialsFilePath, start_time, num_updated, num_added)
 }
